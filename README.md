@@ -88,7 +88,7 @@ Using Groq for the baseline (and **Claude**, a *different* model, for annotation
 | Fine-tuned DistilBERT | **0.606** |
 | **Fine-tuning improvement** | **+0.091** |
 
-Fine-tuning beat the baseline on raw accuracy — but accuracy is misleading here, because 0.606 is *exactly* the `thorough` base rate in the test set (20/33). See per-class metrics.
+Fine-tuning "beat" the baseline on raw accuracy — but accuracy is misleading here, because 0.606 is *exactly* the `thorough` base rate in the test set (20/33). On macro-F1 (the primary metric) the ranking flips: see below.
 
 ### Per-class metrics — Fine-tuned DistilBERT
 
@@ -105,17 +105,25 @@ Fine-tuning beat the baseline on raw accuracy — but accuracy is misleading her
 
 ### Per-class metrics — Baseline (Groq)
 
-<!-- TODO: paste the Section 5 baseline `classification_report` output here.
-     Need per-class precision/recall/F1 for the four labels to complete this table. -->
-
 | Label | Precision | Recall | F1 | Support |
 |---|---|---|---|---|
-| gatekeeping | _paste_ | _paste_ | _paste_ | 3 |
-| thorough | _paste_ | _paste_ | _paste_ | 20 |
-| discouraging | _paste_ | _paste_ | _paste_ | 2 |
-| generic | _paste_ | _paste_ | _paste_ | 8 |
+| gatekeeping | 0.33 | 1.00 | 0.50 | 3 |
+| thorough | 1.00 | 0.55 | 0.71 | 20 |
+| discouraging | 0.00 | 0.00 | 0.00 | 2 |
+| generic | 0.38 | 0.38 | 0.38 | 8 |
+| **macro avg** | **0.43** | **0.48** | **0.40** | 33 |
+| weighted avg | 0.73 | 0.52 | 0.57 | 33 |
 
-*(Baseline overall accuracy 0.515 confirmed; per-class table pending the Section 5 report paste.)*
+### Macro-F1 — the metric that actually matters here
+
+[planning.md](planning.md) named **macro-F1** the primary metric (it weights all four classes equally, so a model can't win by spamming the majority class). On that metric the result inverts:
+
+| Model | Accuracy | **Macro-F1** |
+|---|---|---|
+| Zero-shot baseline (Groq) | 0.515 | **0.40** |
+| Fine-tuned DistilBERT | 0.606 | **0.19** |
+
+**Fine-tuning *regressed* on the primary metric.** The fine-tuned model's higher accuracy is an artifact of always guessing `thorough`; the zero-shot baseline, despite lower accuracy, actually predicts three of the four classes (it even catches all 3 gatekeeping examples — recall 1.00) and so more than doubles the fine-tuned macro-F1. This is the honest headline: on 154 training rows with a 59% majority class, fine-tuning bought worse class-balanced performance than a general LLM with no training at all.
 
 ### Confusion matrix — Fine-tuned DistilBERT (test set)
 
@@ -175,7 +183,7 @@ The deeper lesson: the rarity of gatekeeping/discouraging isn't noise to be engi
 
 **One way the spec helped:** the planning doc forced an explicit, ordered decision rule *before* annotation. When I hit the "specific-but-hostile" example mid-labeling, I didn't have to improvise — the rule already said hostility-toward-asker wins, and I labeled consistently. That consistency is exactly why §6 can confidently call the failure a data problem, not a labeling one.
 
-**One way the implementation diverged:** the spec set macro-F1 ≥ 0.55 as the success bar and assumed fine-tuning would beat the baseline meaningfully. The implementation diverged hard — the model collapsed to the majority class (macro-F1 0.19) and only "beat" the baseline on an accuracy number that's an imbalance artifact. Rather than chase the threshold by quietly rerunning with tricks, I'm reporting the collapse as the honest finding, which the spec's own "if it doesn't beat the baseline, that's a real finding to report" clause explicitly anticipated.
+**One way the implementation diverged:** the spec set macro-F1 ≥ 0.55 as the success bar and assumed fine-tuning would beat the baseline meaningfully. The implementation diverged hard — the model collapsed to the majority class (macro-F1 0.19) and actually *lost* to the zero-shot baseline on macro-F1 (0.40), winning only on an accuracy number that's an imbalance artifact. Rather than chase the threshold by quietly rerunning with tricks, I'm reporting the regression as the honest finding, which the spec's own "if it doesn't beat the baseline, that's a real finding to report" clause explicitly anticipated.
 
 ---
 
