@@ -154,18 +154,16 @@ All errors share one direction — `X → thorough` — so they're best read as 
 
 Posts run through the fine-tuned model with predicted label + confidence (softmax of the predicted class).
 
-<!-- TODO: paste confidence values from the Section 4 "wrong predictions" cell (8b426824)
-     and/or run a few posts through the model. Predicted label is `thorough` for all
-     (model collapse), so only the confidence column needs filling. -->
-
 | # | Post (truncated) | True label | Predicted | Confidence |
 |---|---|---|---|---|
-| 1 | *"700 on math is 66th percentile. If your school requires subject tests, send it."* | thorough | thorough | _paste_ |
-| 2 | *"Are you dumb, Cornell is one of the best engineering schools in the world."* | gatekeeping | thorough | _paste_ |
-| 3 | *"Probably won't get paid though."* | discouraging | thorough | _paste_ |
-| 4 | *"If you don't tell any college, they probably wont know."* | generic | thorough | _paste_ |
+| 1 | *"700 on math is 66th percentile. If your school requires subject tests, send it."* | thorough | thorough | ~0.30 |
+| 2 | *"Are you dumb, Cornell is one of the best engineering schools in the world."* | gatekeeping | thorough | 0.30 |
+| 3 | *"…there is always room at the local newspaper for interns. Probably won't get paid though."* | discouraging | thorough | 0.29 |
+| 4 | *"If you don't tell any college, they probably wont know."* | generic | thorough | 0.29 |
 
-**Why #1 is a reasonable prediction:** it cites a concrete number (66th percentile) and gives conditional, actionable reasoning — a clean `thorough` post, and the one class the model actually learned. Its correctness is real signal, unlike #2–4 which are correct-label-by-accident only when the true label happens to be `thorough`.
+**Why #1 is a reasonable prediction:** it cites a concrete number (66th percentile) and gives conditional, actionable reasoning — a clean `thorough` post, and the one class the model actually learned. Its label is correct for the right reason, unlike #2–4 which are right-only-when-the-truth-is-`thorough`.
+
+**Confidence calibration — the confidence scores are meaningless.** Every prediction (both the correct `thorough` cases and all 13 errors) lands in a **0.27–0.31** band, barely above the 0.25 a uniform random guess would assign across four classes. The model isn't *confidently* wrong — it's not committing at all. A 0.30-confidence correct prediction and a 0.30-confidence error are indistinguishable, so the softmax score carries no useful signal for thresholding or human-triage. This is the calibration counterpart to the argmax collapse: not only does the model always pick `thorough`, it picks it without conviction.
 
 ---
 
